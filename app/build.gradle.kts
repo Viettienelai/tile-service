@@ -1,0 +1,43 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.tilescan"
+    compileSdk {
+        version = release(36)
+    }
+
+    defaultConfig {
+        applicationId = "com.tilescan"
+        minSdk = 34
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true // Bật tính năng rút gọn code
+            isShrinkResources = true // Xóa các ảnh/tài nguyên thừa không dùng
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+}
