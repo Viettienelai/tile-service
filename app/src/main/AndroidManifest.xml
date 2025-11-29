@@ -1,56 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <application
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+    <application>
+
+        <service
+            android:name=".QuickShareTileService"
+            android:exported="true"
+            android:icon="@drawable/quickshare"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
 
         <activity
             android:name=".CtsActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:noHistory="true"
-            android:taskAffinity=""
-            android:exported="false" />
-
-        <service
-            android:name=".ScannerTileService"
-            android:exported="true"
-            android:icon="@drawable/scan"
-            android:label="Google Scan"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name=".QuickShareTileService"
-            android:exported="true"
-            android:icon="@drawable/quickshare"
-            android:label="Quick Share"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
+            android:exported="false"/>
 
         <service
             android:name=".CtsTileService"
+            android:exported="true"
             android:icon="@drawable/cts"
-            android:label="Circle Search"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".LensTileService"
+            android:exported="true"
+            android:icon="@drawable/lens"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
         </service>
 
     </application>
+
 </manifest>
