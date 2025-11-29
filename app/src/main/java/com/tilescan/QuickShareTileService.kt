@@ -32,7 +32,7 @@ class QuickShareTileService : TileService() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 startActivityAndCollapse(pendingIntent)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(this, "Lỗi mở Quick Share", Toast.LENGTH_SHORT).show()
             }
         }

@@ -40,4 +40,6 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
+    implementation(libs.kotlinx.coroutines.android)
 }
