@@ -23,10 +23,6 @@ android {
         release {
             isMinifyEnabled = true // Bật tính năng rút gọn code
             isShrinkResources = true // Xóa các ảnh/tài nguyên thừa không dùng
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
         }
     }
     compileOptions {
