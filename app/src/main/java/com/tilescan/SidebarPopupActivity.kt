@@ -14,6 +14,8 @@ import android.widget.*
 class SidebarPopupActivity : Activity() {
     private lateinit var root: FrameLayout
     private lateinit var container: LinearLayout
+    // Dùng SharedPreferences để nhớ trạng thái Dim
+    private val prefs by lazy { getSharedPreferences("tile_prefs", Context.MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,24 +48,16 @@ class SidebarPopupActivity : Activity() {
             layoutParams = LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.CENTER_HORIZONTAL }
         }
 
-        // Kiểm tra trạng thái Dim hiện tại từ hệ thống
-        val isDimOn = Settings.Secure.getInt(contentResolver, "reduce_bright_colors_activated", 0) == 1
-        val blueColor = Color.parseColor("#448AFF") // Màu xanh lam
-
         val tiles = listOf(
-            Triple(R.drawable.scan, Color.WHITE) { exec("com.google.android.gms", "com.google.android.gms.mlkit.barcode.v2.ScannerActivity") },
-            Triple(R.drawable.lens, Color.WHITE) { exec("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity", true) },
-            Triple(R.drawable.quickshare, Color.WHITE) { exec("com.google.android.gms", "com.google.android.gms.nearby.sharing.ReceiveUsingSamsungQrCodeMainActivity", action = Intent.ACTION_MAIN) },
-
-            // LOGIC MÀU SẮC CHO DIM: Nếu đang Bật -> Xanh, Tắt -> Trắng
-            Triple(R.drawable.dim, if (isDimOn) blueColor else Color.WHITE) { toggleDim() },
-
-            Triple(R.drawable.cts, Color.WHITE) { startActivity(Intent(this, CtsActivity::class.java).addFlags(268435456)) }
+            R.drawable.scan to { exec("com.google.android.gms", "com.google.android.gms.mlkit.barcode.v2.ScannerActivity") },
+            R.drawable.lens to { exec("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity", true) },
+            R.drawable.quickshare to { exec("com.google.android.gms", "com.google.android.gms.nearby.sharing.ReceiveUsingSamsungQrCodeMainActivity", action = Intent.ACTION_MAIN) },
+            R.drawable.dim to { toggleDim() },
+            R.drawable.cts to { startActivity(Intent(this, CtsActivity::class.java).addFlags(268435456)) }
         )
 
-        tiles.forEachIndexed { i, (icon, color, act) ->
-            // Truyền màu vào hàm tạo Tile
-            val tile = mkTile(icon, color, act)
+        tiles.forEachIndexed { i, (icon, act) ->
+            val tile = mkTile(icon, act)
             tile.alpha = 0f; tile.translationY = -80f
             grid.addView(tile)
             tile.animate().alpha(1f).translationY(0f).setStartDelay(50 + (i * 40L)).setInterpolator(OvershootInterpolator(1.2f)).setDuration(450).start()
@@ -95,8 +89,7 @@ class SidebarPopupActivity : Activity() {
         }.start()
     }
 
-    // Sửa hàm mkTile để nhận thêm tham số màu (tint)
-    private fun mkTile(icon: Int, tint: Int, act: () -> Unit) = FrameLayout(this).apply {
+    private fun mkTile(icon: Int, act: () -> Unit) = FrameLayout(this).apply {
         val size = 190
         layoutParams = GridLayout.LayoutParams().apply {
             width = size; height = size; setMargins(30, 40, 30, 40)
@@ -105,7 +98,7 @@ class SidebarPopupActivity : Activity() {
 
         addView(ImageView(context).apply {
             setImageResource(icon)
-            setColorFilter(tint) // Áp dụng màu (Xanh hoặc Trắng)
+            setColorFilter(Color.WHITE)
             layoutParams = FrameLayout.LayoutParams(90, 90, Gravity.CENTER)
         })
         isClickable = true
@@ -120,13 +113,27 @@ class SidebarPopupActivity : Activity() {
         }
     }
 
-    // Hàm toggle Dim: Đọc -> Đảo ngược -> Ghi
+    // --- FIX LOGIC DIM ---
     private fun toggleDim() {
         runCatching {
             if (checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == 0) {
-                val current = Settings.Secure.getInt(contentResolver, "reduce_bright_colors_activated", 0)
-                Settings.Secure.putInt(contentResolver, "reduce_bright_colors_activated", if (current == 1) 0 else 1)
-            } else Toast.makeText(this, "Cần quyền Secure Settings", 0).show()
+                // 1. Lấy trạng thái từ bộ nhớ đệm của APP (Vì không đọc được từ hệ thống)
+                val isCurrentlyDim = prefs.getBoolean("is_dim_active", false)
+
+                // 2. Đảo ngược trạng thái
+                val newState = !isCurrentlyDim
+
+                // 3. Gửi lệnh ghi vào hệ thống (Chỉ GHI, không ĐỌC)
+                Settings.Secure.putInt(contentResolver, "reduce_bright_colors_activated", if (newState) 1 else 0)
+
+                // 4. Lưu lại trạng thái mới vào bộ nhớ App
+                prefs.edit().putBoolean("is_dim_active", newState).apply()
+
+                // (Tùy chọn) Toast báo cho user biết
+                // Toast.makeText(this, if(newState) "Đã làm tối" else "Đã làm sáng", 0).show()
+            } else {
+                Toast.makeText(this, "Cần quyền Secure Settings", 0).show()
+            }
         }
     }
 
