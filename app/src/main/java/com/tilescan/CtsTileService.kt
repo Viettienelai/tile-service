@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.app.PendingIntent.*
 import android.content.Intent
-import android.os.*
+import android.os.* // Đã bao gồm Vibrator và VibrationEffect
 import android.service.quicksettings.TileService
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
@@ -22,6 +22,11 @@ class CtsActivity : Activity() {
         window.setFlags(512, 512) // 512 = FLAG_LAYOUT_NO_LIMITS
 
         Handler(mainLooper).postDelayed({
+            // --- THÊM MỚI: Xử lý rung (50ms) ---
+            val vibrator = getSystemService(Vibrator::class.java)
+            vibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            // -----------------------------------
+
             runCatching {
                 val binder = Class.forName("android.os.ServiceManager").getMethod("getService", String::class.java).invoke(null, "voiceinteraction") as IBinder
                 val service = Class.forName("com.android.internal.app.IVoiceInteractionManagerService\$Stub").getMethod("asInterface", IBinder::class.java).invoke(null, binder)
@@ -33,6 +38,6 @@ class CtsActivity : Activity() {
                 HiddenApiBypass.invoke(Class.forName("com.android.internal.app.IVoiceInteractionManagerService"), service, "showSessionFromSession", null, bundle, 7, "hyperOS_home")
             }
             finish(); overridePendingTransition(0, 0)
-        }, 350)
+        }, 350) // Thời gian delay 350ms
     }
 }
