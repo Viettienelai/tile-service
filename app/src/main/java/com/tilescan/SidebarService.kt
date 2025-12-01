@@ -1,7 +1,7 @@
 package com.tilescan
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Context
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -15,8 +15,9 @@ class SidebarService : AccessibilityService() {
     private var initialY = 0f
     private var isTriggered = false
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onServiceConnected() {
-        wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        wm = getSystemService(WINDOW_SERVICE) as WindowManager
 
         touchView = FrameLayout(this).apply {
             // Mẹo: Đổi thành Color.TRANSPARENT khi chạy thật

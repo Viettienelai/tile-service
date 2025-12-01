@@ -1,8 +1,9 @@
 package com.tilescan
 
-import android.animation.*
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.*
+import android.content.pm.PackageManager
 import android.graphics.*
 import android.graphics.drawable.*
 import android.os.Bundle
@@ -10,13 +11,17 @@ import android.provider.Settings
 import android.view.*
 import android.view.animation.OvershootInterpolator
 import android.widget.*
+import androidx.core.graphics.toColorInt
+import androidx.core.content.edit
 
+@Suppress("DEPRECATION")
 class SidebarPopupActivity : Activity() {
     private lateinit var root: FrameLayout
     private lateinit var container: LinearLayout
     // Dùng SharedPreferences để nhớ trạng thái Dim
-    private val prefs by lazy { getSharedPreferences("tile_prefs", Context.MODE_PRIVATE) }
+    private val prefs by lazy { getSharedPreferences("tile_prefs", MODE_PRIVATE) }
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(512, 512)
@@ -24,7 +29,7 @@ class SidebarPopupActivity : Activity() {
         // 1. Setup Popup
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = GradientDrawable().apply { setColor(Color.parseColor("#FF222222")); cornerRadius = 55f }
+            background = GradientDrawable().apply { setColor("#FF222222".toColorInt()); cornerRadius = 55f }
             setPadding(40, 80, 40, 90)
             layoutParams = FrameLayout.LayoutParams(-1, -2).apply {
                 gravity = Gravity.CENTER; setMargins(80, 0, 80, 0)
@@ -53,7 +58,7 @@ class SidebarPopupActivity : Activity() {
             R.drawable.lens to { exec("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity", true) },
             R.drawable.quickshare to { exec("com.google.android.gms", "com.google.android.gms.nearby.sharing.ReceiveUsingSamsungQrCodeMainActivity", action = Intent.ACTION_MAIN) },
             R.drawable.dim to { toggleDim() },
-            R.drawable.cts to { startActivity(Intent(this, CtsActivity::class.java).addFlags(268435456)) }
+            R.drawable.cts to { startActivity(Intent(this, CtsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         )
 
         tiles.forEachIndexed { i, (icon, act) ->
@@ -66,7 +71,7 @@ class SidebarPopupActivity : Activity() {
 
         // 4. Root Wrapper
         root = FrameLayout(this).apply {
-            setBackgroundColor(Color.parseColor("#33FFFFFF")); alpha = 0f
+            setBackgroundColor("#33FFFFFF".toColorInt()); alpha = 0f
             setOnClickListener { close() }; addView(container)
         }
         setContentView(root)
@@ -94,7 +99,7 @@ class SidebarPopupActivity : Activity() {
         layoutParams = GridLayout.LayoutParams().apply {
             width = size; height = size; setMargins(30, 40, 30, 40)
         }
-        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#22FFFFFF")) }
+        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor("#22FFFFFF".toColorInt()) }
 
         addView(ImageView(context).apply {
             setImageResource(icon)
@@ -108,7 +113,7 @@ class SidebarPopupActivity : Activity() {
     private fun exec(pkg: String, cls: String, hist: Boolean = false, action: String? = null) {
         runCatching {
             startActivity(Intent().setClassName(pkg, cls).apply {
-                addFlags(268435456); if(hist) addFlags(1048576); if(action!=null) setAction(action)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); if(hist) addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY); if(action!=null) setAction(action)
             })
         }
     }
@@ -116,7 +121,7 @@ class SidebarPopupActivity : Activity() {
     // --- FIX LOGIC DIM ---
     private fun toggleDim() {
         runCatching {
-            if (checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == 0) {
+            if (checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == PackageManager.PERMISSION_GRANTED) {
                 // 1. Lấy trạng thái từ bộ nhớ đệm của APP (Vì không đọc được từ hệ thống)
                 val isCurrentlyDim = prefs.getBoolean("is_dim_active", false)
 
@@ -127,12 +132,12 @@ class SidebarPopupActivity : Activity() {
                 Settings.Secure.putInt(contentResolver, "reduce_bright_colors_activated", if (newState) 1 else 0)
 
                 // 4. Lưu lại trạng thái mới vào bộ nhớ App
-                prefs.edit().putBoolean("is_dim_active", newState).apply()
+                prefs.edit { putBoolean("is_dim_active", newState) }
 
                 // (Tùy chọn) Toast báo cho user biết
                 // Toast.makeText(this, if(newState) "Đã làm tối" else "Đã làm sáng", 0).show()
             } else {
-                Toast.makeText(this, "Cần quyền Secure Settings", 0).show()
+                Toast.makeText(this, "Cần quyền Secure Settings", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -146,6 +151,9 @@ class SidebarPopupActivity : Activity() {
             c.drawRect(w-8f, h/3f, w, h*2/3f, f)
             c.drawRoundRect(8f, 8f, w-18f, h-8f, 3f, 3f, f)
         }
-        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: ColorFilter?) {}; override fun getOpacity() = -3
+        override fun setAlpha(a: Int) {}; override fun setColorFilter(cf: ColorFilter?) {}; @Deprecated(
+            "Deprecated in Java"
+        )
+        override fun getOpacity() = PixelFormat.TRANSPARENT
     }
 }
