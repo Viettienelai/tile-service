@@ -47,7 +47,6 @@
             </intent-filter>
         </service>
 
-
         <service
             android:name=".ExtraDimTileService"
             android:icon="@drawable/dim"
@@ -61,9 +60,9 @@
         <activity
             android:name=".SidebarPopupActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:launchMode="singleTask"
+            android:launchMode="singleTop"
             android:excludeFromRecents="true"
-            android:taskAffinity=""
+            android:windowSoftInputMode="stateAlwaysHidden"
             android:exported="false"/>
 
         <service
