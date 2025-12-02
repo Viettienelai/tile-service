@@ -99,6 +99,13 @@ class PopupBarManager(private val ctx: Context) {
         }
         con.addView(grid); root.addView(con)
 
+        root.addView(TextView(ctx).apply {
+            text = "ViệtTiến┇ᴱᴸᴬᴵ"; setTextColor(-1); textSize = 13f; typeface = Typeface.DEFAULT_BOLD
+            layoutParams = FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = 60 }
+            translationY = 100f // Bắt đầu ở dưới và trong suốt
+            animate().translationY(0f).setDuration(350).start() // Trồi lên
+        })
+
         // Window Params (Full Screen + Cutout)
         val p = WindowManager.LayoutParams(-1, -1, 2032,
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
