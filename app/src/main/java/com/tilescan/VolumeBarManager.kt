@@ -7,6 +7,7 @@ import android.content.Context.WINDOW_SERVICE
 import android.graphics.Color
 import android.graphics.Rect
 import android.media.AudioManager
+import android.os.Build
 import android.view.*
 import android.widget.FrameLayout
 
@@ -15,8 +16,14 @@ class VolumeBarManager(private val ctx: Context) {
     private val wm = ctx.getSystemService(WINDOW_SERVICE) as WindowManager
     private var barView: View? = null
 
+    // SỬA: Xác định loại Overlay
+    private val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+    } else {
+        WindowManager.LayoutParams.TYPE_PHONE
+    }
+
     fun setup() {
-        // Vị trí: Cách top 400px, Cao 300px, Màu Xanh
         addBar(400, 300, Color.TRANSPARENT) {
             val am = ctx.getSystemService(AUDIO_SERVICE) as AudioManager
             am.adjustVolume(AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI)
@@ -27,11 +34,12 @@ class VolumeBarManager(private val ctx: Context) {
     private fun addBar(yPos: Int, h: Int, color: Int, act: () -> Unit) {
         val v = FrameLayout(ctx).apply {
             setBackgroundColor(color)
-            // Chặn cử chỉ Back của hệ thống
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null) // Tối ưu pin
+
             addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
                 view.systemGestureExclusionRects = listOf(Rect(0, 0, view.width, view.height))
             }
-            // Xử lý vuốt
+
             var x0 = 0f; var d = false
             setOnTouchListener { _, e ->
                 when (e.action) {
@@ -43,11 +51,11 @@ class VolumeBarManager(private val ctx: Context) {
         }
 
         val p = WindowManager.LayoutParams(
-            20, h, 2032, // Width, Height, Type_Accessibility_Overlay
+            20, h, layoutType, // SỬA: Dùng Type mới
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            -3 // PixelFormat.Translucent
+            -3
         ).apply {
             gravity = Gravity.TOP or Gravity.END
             y = yPos
