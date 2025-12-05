@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.tilescan",
+  "applicationId": "com.myapp",
   "variantName": "release",
   "elements": [
     {

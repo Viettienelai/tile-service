@@ -7,7 +7,7 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.service.quicksettings.TileService
 import android.widget.Toast
 
-class ScannerTileService : TileService() {
+class ScannerTile : TileService() {
 
     override fun onClick() {
         super.onClick()

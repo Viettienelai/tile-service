@@ -9,13 +9,13 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.myapp.R
 
-class SidebarService : Service() {
+class Sidebar : Service() {
 
     // Vẫn dùng các Manager cũ của bạn, nhưng truyền Context là Service này
     // Lưu ý: Trong PopupBarManager/VolumeBarManager, bạn cần đảm bảo
     // LayoutParams của WindowManager dùng TYPE_APPLICATION_OVERLAY (cho Android 8+)
-    private val volumeManager by lazy { VolumeBarManager(this) }
-    private val popupManager by lazy { PopupBarManager(this) }
+    private val volumeManager by lazy { VolumeBar(this) }
+    private val popupManager by lazy { Popup(this) }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null // Không cần bind

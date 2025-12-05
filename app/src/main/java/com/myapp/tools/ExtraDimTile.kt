@@ -6,7 +6,7 @@ import android.provider.Settings
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 
-class ExtraDimTileService : TileService() {
+class ExtraDimTile : TileService() {
 
     override fun onStartListening() {
         updateUi()

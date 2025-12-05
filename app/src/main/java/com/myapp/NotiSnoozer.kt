@@ -3,7 +3,7 @@ package com.myapp
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 
-class NotificationSnoozerService : NotificationListenerService() {
+class NotiSnoozer : NotificationListenerService() {
 
     // Danh sách các từ khóa bạn muốn chặn.
     // Chỉ cần thêm chuỗi mới vào đây là xong.

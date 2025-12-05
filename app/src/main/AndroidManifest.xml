@@ -23,7 +23,7 @@
         </activity>
 
         <service
-            android:name="com.myapp.tools.QuickShareTileService"
+            android:name="com.myapp.tools.QuickShareTile"
             android:exported="true"
             android:icon="@drawable/quickshare"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
@@ -43,7 +43,7 @@
         </service>
 
         <service
-            android:name="com.myapp.tools.LensTileService"
+            android:name="com.myapp.tools.LensTile"
             android:exported="true"
             android:icon="@drawable/lens"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
@@ -53,7 +53,7 @@
         </service>
 
         <service
-            android:name="com.myapp.tools.ExtraDimTileService"
+            android:name="com.myapp.tools.ExtraDimTile"
             android:icon="@drawable/dim"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">
@@ -63,14 +63,14 @@
         </service>
 
         <service
-            android:name="com.myapp.tools.SidebarService"
+            android:name="com.myapp.tools.Sidebar"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="specialUse">
         </service>
 
         <service
-            android:name=".NotificationSnoozerService"
+            android:name=".NotiSnoozer"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

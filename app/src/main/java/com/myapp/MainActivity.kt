@@ -7,7 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import com.myapp.tools.SidebarService
+import com.myapp.tools.Sidebar
 
 class MainActivity : Activity() {
 
@@ -55,7 +55,7 @@ class MainActivity : Activity() {
     }
 
     private fun startSidebarService() {
-        val intent = Intent(this, SidebarService::class.java)
+        val intent = Intent(this, Sidebar::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
@@ -63,6 +63,6 @@ class MainActivity : Activity() {
         }
 
         // Kích hoạt luôn service snooze
-        startService(Intent(this, NotificationSnoozerService::class.java))
+        startService(Intent(this, NotiSnoozer::class.java))
     }
 }

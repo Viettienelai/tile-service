@@ -6,7 +6,6 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.graphics.drawable.*
-import android.os.Build
 import android.provider.Settings
 import android.view.*
 import android.view.animation.*
@@ -16,7 +15,7 @@ import androidx.core.view.isVisible
 import com.myapp.R
 
 @Suppress("DEPRECATION")
-class PopupBarManager(private val ctx: Context) {
+class Popup(private val ctx: Context) {
 
     private val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var barView: View? = null
@@ -88,7 +87,8 @@ class PopupBarManager(private val ctx: Context) {
             R.drawable.lens to { exec("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity", true) },
             R.drawable.quickshare to { exec("com.google.android.gms", "com.google.android.gms.nearby.sharing.ReceiveUsingSamsungQrCodeMainActivity", action = Intent.ACTION_MAIN) },
             R.drawable.dim to { toggleDim() },
-            R.drawable.cts to { ctx.startActivity(Intent(ctx, CtsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            R.drawable.cts to { ctx.startActivity(Intent(ctx, CtsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
+            R.drawable.light to { FakeLock(ctx).lock() }
         )
 
         tiles.forEachIndexed { i, (ic, fn) ->
@@ -115,9 +115,7 @@ class PopupBarManager(private val ctx: Context) {
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or WindowManager.LayoutParams.FLAG_BLUR_BEHIND, -3).apply {
             blurBehindRadius = 0
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            }
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
 
         wm.addView(root, p); popupView = root
@@ -155,11 +153,9 @@ class PopupBarManager(private val ctx: Context) {
     }
 
     private fun animateBlur(v: View, p: WindowManager.LayoutParams, f: Int, t: Int, d: Long) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ValueAnimator.ofInt(f, t).apply { duration = d; addUpdateListener {
-                if (v.isAttachedToWindow && v.isVisible) try { p.blurBehindRadius = it.animatedValue as Int; wm.updateViewLayout(v, p) } catch (_: Exception){}
-            }}.start()
-        }
+        ValueAnimator.ofInt(f, t).apply { duration = d; addUpdateListener {
+            if (v.isAttachedToWindow && v.isVisible) try { p.blurBehindRadius = it.animatedValue as Int; wm.updateViewLayout(v, p) } catch (_: Exception){}
+        }}.start()
     }
 
     private fun exec(pkg: String, cls: String, hist: Boolean = false, action: String? = null) {

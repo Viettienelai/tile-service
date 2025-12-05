@@ -5,7 +5,7 @@ import android.content.Intent
 import android.service.quicksettings.TileService
 import android.widget.Toast
 
-class LensTileService : TileService() {
+class LensTile : TileService() {
     override fun onClick() {
         runCatching {
             val intent = Intent()

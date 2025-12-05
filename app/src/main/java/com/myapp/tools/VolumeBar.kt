@@ -10,7 +10,7 @@ import android.media.AudioManager
 import android.view.*
 import android.widget.FrameLayout
 
-class VolumeBarManager(private val ctx: Context) {
+class VolumeBar(private val ctx: Context) {
 
     private val wm = ctx.getSystemService(WINDOW_SERVICE) as WindowManager
     private var barView: View? = null
