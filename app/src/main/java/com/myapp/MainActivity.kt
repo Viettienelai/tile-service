@@ -2,51 +2,47 @@ package com.myapp
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
-import android.widget.Toast
 import com.myapp.tools.Sidebar
+import androidx.core.net.toUri
 
 class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Quy trình kiểm tra quyền:
-        // 1. Kiểm tra quyền Vẽ trên ứng dụng khác (Overlay)
-        // 2. Kiểm tra quyền Truy cập thông báo (Để snooze thông báo hệ thống)
-        // 3. Nếu đủ -> Bắt đầu Service Sidebar
         checkAndRequestPermissions()
     }
 
     override fun onResume() {
         super.onResume()
-        // Kiểm tra lại mỗi khi user quay lại từ cài đặt
         checkAndRequestPermissions()
     }
 
     private fun checkAndRequestPermissions() {
-        // 1. Quyền Overlay (Quan trọng nhất)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "Vui lòng cấp quyền 'Vẽ trên ứng dụng khác'", Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivity(intent)
+        // 1. Quyền Overlay (Hiển thị trên ứng dụng khác)
+        if (!Settings.canDrawOverlays(this)) {
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri()))
             return
         }
 
-        // 2. Quyền Notification Listener (Để ẩn thông báo hệ thống)
+        // 2. Quyền Notification (Đọc/Snooze thông báo)
         if (!isNotificationServiceEnabled()) {
-            Toast.makeText(this, "Vui lòng cấp quyền 'Truy cập thông báo' để ẩn icon hệ thống", Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-            startActivity(intent)
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             return
         }
 
-        // 3. Nếu đủ quyền -> Chạy Service
+        // 3. Quyền Storage (Quản lý tất cả tệp - Để dọn rác)
+        // Yêu cầu Android 11+ (API 30+). Nếu target thấp hơn thì cần code khác.
+        if (!Environment.isExternalStorageManager()) {
+            startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, "package:$packageName".toUri()))
+            return
+        }
+
+        // 4. Nếu đủ quyền -> Chạy Service và đóng UI
         startSidebarService()
-        finish() // Đóng Activity cho gọn
+        finish()
     }
 
     private fun isNotificationServiceEnabled(): Boolean {
@@ -55,14 +51,7 @@ class MainActivity : Activity() {
     }
 
     private fun startSidebarService() {
-        val intent = Intent(this, Sidebar::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
-
-        // Kích hoạt luôn service snooze
+        startForegroundService(Intent(this, Sidebar::class.java))
         startService(Intent(this, NotiSnoozer::class.java))
     }
 }

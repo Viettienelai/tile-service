@@ -11,7 +11,11 @@ class NotiSnoozer : NotificationListenerService() {
         "displaying over other apps",  // Chặn toàn bộ thông báo vẽ đè (bất kể app nào)
         "chat heads active",
         "smart rapid charging is on",
-        "power saving mode turned on"
+        "power saving mode turned on",
+        "battery saver turned off",
+        "developer options turned on",
+        "turn off usb debugging",
+        "wireless debugging connected"
     )
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {

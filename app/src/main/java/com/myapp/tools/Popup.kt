@@ -88,19 +88,34 @@ class Popup(private val ctx: Context) {
             R.drawable.quickshare to { exec("com.google.android.gms", "com.google.android.gms.nearby.sharing.ReceiveUsingSamsungQrCodeMainActivity", action = Intent.ACTION_MAIN) },
             R.drawable.dim to { toggleDim() },
             R.drawable.cts to { ctx.startActivity(Intent(ctx, CtsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
-            R.drawable.light to { FakeLock(ctx).lock() }
+            R.drawable.light to { FakeLock(ctx).lock() },
+            R.drawable.clean to { Cleaner.clean() }
         )
 
-        tiles.forEachIndexed { i, (ic, fn) ->
+        tiles.forEach { (ic, fn) -> // Đổi thành forEach vì không cần dùng index (i) nữa
             val t = FrameLayout(ctx).apply {
                 layoutParams = GridLayout.LayoutParams().apply { width = 190; height = 190; setMargins(30, 40, 30, 40) }
                 background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(120, 0, 0, 0)) }
                 addView(ImageView(context).apply { setImageResource(ic); setColorFilter(-1); layoutParams = FrameLayout.LayoutParams(75, 75, 17) })
                 setOnClickListener { fn(); close(root) }
-                alpha = 0f; translationY = -80f
+
+                // Trạng thái ban đầu: Mờ, Dịch lên, Thu nhỏ 0.7
+                alpha = 0f
+                translationY = -100f
+                scaleX = 0.1f
+                scaleY = 0.1f
             }
             grid.addView(t)
-            t.animate().alpha(1f).translationY(0f).setStartDelay(50 + (i * 40L)).setInterpolator(OvershootInterpolator(1.2f)).setDuration(450).start()
+
+            // Animation: Hiện rõ, Về vị trí cũ, Phóng to lên 1.0 (Cùng lúc, không delay)
+            t.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setInterpolator(OvershootInterpolator(1.2f))
+                .setDuration(700)
+                .start()
         }
         con.addView(grid); root.addView(con)
 

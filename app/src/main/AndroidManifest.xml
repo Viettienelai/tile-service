@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.myapp"> <!-- DÒNG QUAN TRỌNG NHẤT: Phải có dòng này -->
+    package="com.myapp">
 
-    <uses-permission
-        android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions"
-        xmlns:tools="http://schemas.android.com/tools"/>
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" xmlns:tools="http://schemas.android.com/tools"/>
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
 
     <application>
         <activity
@@ -21,46 +19,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name="com.myapp.tools.QuickShareTile"
-            android:exported="true"
-            android:icon="@drawable/quickshare"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE"/>
-            </intent-filter>
-        </service>
-
-        <service
-            android:name="com.myapp.tools.CtsTileService"
-            android:exported="true"
-            android:icon="@drawable/cts"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE"/>
-            </intent-filter>
-        </service>
-
-        <service
-            android:name="com.myapp.tools.LensTile"
-            android:exported="true"
-            android:icon="@drawable/lens"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE"/>
-            </intent-filter>
-        </service>
-
-        <service
-            android:name="com.myapp.tools.ExtraDimTile"
-            android:icon="@drawable/dim"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
 
         <service
             android:name="com.myapp.tools.Sidebar"
