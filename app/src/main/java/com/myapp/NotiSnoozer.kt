@@ -15,7 +15,10 @@ class NotiSnoozer : NotificationListenerService() {
         "battery saver turned off",
         "developer options turned on",
         "turn off usb debugging",
-        "wireless debugging connected"
+        "wireless debugging connected",
+        "photos deleted by",
+        "usb debugging enabled",
+        "your photo was sent"
     )
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
