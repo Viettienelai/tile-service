@@ -28,6 +28,6 @@ class CtsActivity : Activity() {
                 HiddenApiBypass.invoke(Class.forName("com.android.internal.app.IVoiceInteractionManagerService"), service, "showSessionFromSession", null, bundle, 7, "hyperOS_home")
             }
             finish(); overridePendingTransition(0, 0)
-        }, 200) // Thời gian delay 350ms
+        }, 300) // Thời gian delay 350ms
     }
 }

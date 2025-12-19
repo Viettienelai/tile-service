@@ -18,12 +18,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = true // Bật tính năng rút gọn code
-            isShrinkResources = true // Xóa các ảnh/tài nguyên thừa không dùng
+    signingConfigs {
+        create("release") {
+            // Quan trọng: dùng file() để lấy đường dẫn tương đối từ thư mục app
+            storeFile = file("my-release-key.jks")
+            storePassword = "123456" // Pass bạn đặt ở bước 1
+            keyAlias = "key0"        // Alias bạn đặt ở bước 1
+            keyPassword = "123456"   // Pass bạn đặt ở bước 1
         }
     }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

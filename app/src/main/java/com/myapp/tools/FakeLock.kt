@@ -8,14 +8,21 @@ import android.widget.FrameLayout
 
 @Suppress("DEPRECATION")
 class FakeLock(private val ctx: Context) {
+
+    // THAY ĐỔI: Thêm tham số onUnlock (callback)
     @SuppressLint("ClickableViewAccessibility")
-    fun lock() {
+    fun lock(onUnlock: () -> Unit = {}) {
         val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
         val v = object : FrameLayout(ctx) {
             override fun dispatchKeyEvent(e: KeyEvent): Boolean {
+                // Khi bấm Volume Up/Down để mở khóa
                 if (e.action == KeyEvent.ACTION_DOWN && (e.keyCode == 24 || e.keyCode == 25)) {
-                    runCatching { wm.removeView(this) }
+                    runCatching {
+                        wm.removeView(this)
+                        // THAY ĐỔI: Gọi callback để báo cho Popup biết đã mở khóa
+                        onUnlock()
+                    }
                     return true
                 }
                 return super.dispatchKeyEvent(e)
@@ -25,7 +32,6 @@ class FakeLock(private val ctx: Context) {
             isFocusable = true; isFocusableInTouchMode = true
             setOnTouchListener { _, _ -> true }
 
-            // Ẩn thanh trạng thái và điều hướng (Full Immersive)
             @Suppress("DEPRECATION")
             systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
@@ -39,8 +45,6 @@ class FakeLock(private val ctx: Context) {
             WindowManager.LayoutParams.FLAG_FULLSCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, -3).apply {
-
-            // QUAN TRỌNG: Cho phép vẽ tràn qua vùng tai thỏ/camera
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
 

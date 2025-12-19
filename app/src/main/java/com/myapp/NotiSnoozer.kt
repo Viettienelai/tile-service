@@ -18,7 +18,11 @@ class NotiSnoozer : NotificationListenerService() {
         "wireless debugging connected",
         "photos deleted by",
         "usb debugging enabled",
-        "your photo was sent"
+        "your photo was sent",
+        "charging complete",
+        "checking for new messages",
+        "chat heads active",
+        "via is downloading files"
     )
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {

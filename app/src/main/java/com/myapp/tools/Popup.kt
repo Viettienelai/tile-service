@@ -3,197 +3,139 @@ package com.myapp.tools
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.*
-import android.content.pm.PackageManager
 import android.graphics.*
-import android.graphics.drawable.*
+import android.graphics.drawable.GradientDrawable
 import android.provider.Settings
 import android.view.*
-import android.view.animation.*
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.*
 import androidx.core.content.edit
-import androidx.core.view.isVisible
 import com.myapp.R
 
 @Suppress("DEPRECATION")
-class Popup(private val ctx: Context) {
+class Popup(private val c: Context) {
+    private val w = c.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    private val p = c.getSharedPreferences("tile_prefs", Context.MODE_PRIVATE)
+    private var bar: View? = null
+    private var pop: View? = null
 
-    private val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    private var barView: View? = null
-    private var popupView: View? = null
+    // ip: Dùng cho background, text và animation đóng (mượt mà, không nảy)
+    private val ip = DecelerateInterpolator(2f)
 
-    // Xác định loại Layout phù hợp cho Android mới (8.0+) và cũ
-    private val layoutType =
-        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-
-    fun setup() {
-        addBar(0, 300, Color.TRANSPARENT) { showPopup() }
-    }
+    private val lpBar = WindowManager.LayoutParams(20, 300, 2038, 296, -3).apply { gravity = Gravity.TOP or Gravity.END }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun addBar(yPos: Int, h: Int, color: Int, act: () -> Unit) {
-        val v = FrameLayout(ctx).apply {
-            setBackgroundColor(color)
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null) // Tối ưu GPU cho view tĩnh
-            systemGestureExclusionRects = listOf(Rect(0, 0, 20, h))
-
-            var x0 = 0f; var d = false
+    fun setup() {
+        val v = FrameLayout(c).apply {
+            setBackgroundColor(0); setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            systemGestureExclusionRects = listOf(Rect(0, 0, 20, 300))
+            var x = 0f; var d = false
             setOnTouchListener { _, e ->
                 when (e.action) {
-                    MotionEvent.ACTION_DOWN -> { x0 = e.rawX; d = false }
-                    MotionEvent.ACTION_MOVE -> if (!d && e.rawX - x0 < -20) { d = true; act() }
+                    MotionEvent.ACTION_DOWN -> { x = e.rawX; d = false }
+                    MotionEvent.ACTION_MOVE -> if (!d && e.rawX - x < -20) { d = true; show() }
                 }
                 true
             }
         }
+        w.addView(v, lpBar); bar = v
+    }
 
-        val p = WindowManager.LayoutParams(20, h, layoutType, 296, -3).apply {
-            gravity = Gravity.TOP or Gravity.END
-            y = yPos
-        }
-        wm.addView(v, p); barView = v
+    private fun keep(on: Boolean) = bar?.let {
+        lpBar.flags = if (on) lpBar.flags or 128 else lpBar.flags and 128.inv()
+        w.updateViewLayout(it, lpBar)
     }
 
     @SuppressLint("SetTextI18n")
-    private fun showPopup() {
-        if (popupView != null) return
-
-        val root = FrameLayout(ctx).apply {
-            // Logic tiết kiệm pin: Max alpha nếu bật, ngược lại 90
-            val isSave = (ctx.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isPowerSaveMode
-            setBackgroundColor(Color.argb(if (isSave) 255 else 90, 110, 110, 110))
-
-            alpha = 0f; isClickable = true
-            setOnClickListener { close(this) }
+    private fun show() {
+        if (pop != null) return
+        val root = FrameLayout(c).apply {
+            val save = (c.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isPowerSaveMode
+            setBackgroundColor(Color.argb(if (save) 255 else 90, 110, 110, 110))
+            alpha = 0f; isClickable = true; setOnClickListener { close(this) }
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
-
-            // Giúp view tràn xuống dưới Navigation Bar
-            systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            systemUiVisibility = 1280
         }
+        val grid = GridLayout(c).apply { columnCount = 3; layoutParams = FrameLayout.LayoutParams(-2, -2, 17) }
+        val setOn = { on: Boolean -> p.edit { putBoolean("on", on) }; keep(on) }
 
-        val con = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(40, 80, 40, 90)
-            layoutParams = FrameLayout.LayoutParams(-1, -2, Gravity.CENTER).apply { setMargins(80, 0, 80, 0) }
-            translationY = -150f
-        }
+        // osIp: Dùng riêng cho hiệu ứng nảy của các icon (1.5f là độ nảy)
+        val osIp = OvershootInterpolator(2f)
 
-        // --- ĐÃ XÓA PHẦN HIỂN THỊ PIN & NHIỆT ĐỘ TẠI ĐÂY ---
-
-        // Grid Icons
-        val grid = GridLayout(ctx).apply { columnCount = 3; layoutParams = LinearLayout.LayoutParams(-2, -2).apply { gravity = 1 } }
-        val tiles = listOf(
+        listOf(
             R.drawable.scan to { exec("com.google.android.gms", "com.google.android.gms.mlkit.barcode.v2.ScannerActivity") },
             R.drawable.lens to { exec("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity", true) },
             R.drawable.quickshare to { exec("com.google.android.gms", "com.google.android.gms.nearby.sharing.ReceiveUsingSamsungQrCodeMainActivity", action = Intent.ACTION_MAIN) },
-            R.drawable.dim to { toggleDim() },
-            R.drawable.cts to { ctx.startActivity(Intent(ctx, CtsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
-            R.drawable.light to { FakeLock(ctx).lock() },
+            R.drawable.screenon to { setOn(!p.getBoolean("on", false)) },
+            R.drawable.dim to {
+                if (c.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == 0) {
+                    val d = !p.getBoolean("dim", false)
+                    Settings.Secure.putInt(c.contentResolver, "reduce_bright_colors_activated", if (d) 1 else 0)
+                    p.edit { putBoolean("dim", d) }
+                }
+            },
+            R.drawable.cts to { c.startActivity(Intent(c, CtsActivity::class.java).addFlags(268435456)) },
+            R.drawable.light to { setOn(true); FakeLock(c).lock { setOn(false) } },
             R.drawable.clean to { Cleaner.clean() }
-        )
-
-        tiles.forEach { (ic, fn) -> // Đổi thành forEach vì không cần dùng index (i) nữa
-            val t = FrameLayout(ctx).apply {
+        ).forEachIndexed { i, (ic, fn) ->
+            grid.addView(FrameLayout(c).apply {
                 layoutParams = GridLayout.LayoutParams().apply { width = 190; height = 190; setMargins(30, 40, 30, 40) }
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(120, 0, 0, 0)) }
-                addView(ImageView(context).apply { setImageResource(ic); setColorFilter(-1); layoutParams = FrameLayout.LayoutParams(75, 75, 17) })
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(if (ic == R.drawable.screenon && p.getBoolean("on", false)) Color.rgb(33, 124, 255) else Color.argb(120, 0, 0, 0)) }
+                addView(ImageView(c).apply { setImageResource(ic); setColorFilter(-1); layoutParams = FrameLayout.LayoutParams(75, 75, 17) })
                 setOnClickListener { fn(); close(root) }
 
-                // Trạng thái ban đầu: Mờ, Dịch lên, Thu nhỏ 0.7
-                alpha = 0f
-                translationY = -100f
-                scaleX = 0.1f
-                scaleY = 0.1f
-            }
-            grid.addView(t)
+                // Animation Overshoot cho icon/oval
+                alpha = 0f; translationY = -250f; scaleX = 0.5f; scaleY = 0.1f
 
-            // Animation: Hiện rõ, Về vị trí cũ, Phóng to lên 1.0 (Cùng lúc, không delay)
-            t.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setInterpolator(OvershootInterpolator(1.2f))
-                .setDuration(700)
-                .start()
+                // Tính toán delay: Hàng 1 (index 0,1,2) delay 0; Hàng 2 (index 3,4,5) delay 200...
+                val d = (i / 3 * 100).toLong()
+
+                animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f)
+                    .setInterpolator(osIp)
+                    .setDuration(600)
+                    .setStartDelay(d)
+                    .start()
+            })
         }
-        con.addView(grid); root.addView(con)
 
-        root.addView(TextView(ctx).apply {
+        root.addView(grid)
+        root.addView(TextView(c).apply {
             text = "ViệtTiến┇ᴱᴸᴬᴵ"; setTextColor(-1); textSize = 13f; typeface = Typeface.DEFAULT_BOLD
-            layoutParams = FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = 80 }
-            translationY = 100f
-            animate().translationY(0f).setDuration(350).start()
+            layoutParams = FrameLayout.LayoutParams(-2, -2, 81).apply { bottomMargin = 80 }
+            // Animation Decelerate (ip) cho text
+            translationY = 50f; animate().translationY(0f).setInterpolator(ip).setDuration(800).start()
         })
 
-        val p = WindowManager.LayoutParams(-1, -1, layoutType,
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or WindowManager.LayoutParams.FLAG_BLUR_BEHIND, -3).apply {
-            blurBehindRadius = 0
-            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        }
-
-        wm.addView(root, p); popupView = root
-
-        root.post {
-            animateBlur(root, p, 0, 500, 350)
-            root.animate().alpha(1f).setDuration(350).start()
-            con.animate().translationY(0f).setInterpolator(OvershootInterpolator(1f)).setDuration(350).start()
-        }
+        val lp = WindowManager.LayoutParams(-1, -1, 2038, 262404, -3).apply { blurBehindRadius = 0; layoutInDisplayCutoutMode = 1 }
+        w.addView(root, lp); pop = root
+        // Animation Decelerate (ip) cho background blur và alpha toàn bộ view
+        root.post { blur(root, lp, 0, 500); root.animate().alpha(1f).setInterpolator(ip).setDuration(800).start() }
     }
 
-    private fun close(root: View) {
-        if (popupView == null) return
-        val vg = root as ViewGroup
-        val p = root.layoutParams as WindowManager.LayoutParams
-
-        animateBlur(root, p, p.blurBehindRadius, 0, 200)
-
-        // Container (Icons): Bay lên trên và mờ dần
-        vg.getChildAt(0).animate().translationY(-200f).alpha(0f)
-            .setDuration(250).setInterpolator(AccelerateInterpolator()).start()
-
-        // Text (ViệtTiến): Bay xuống dưới
-        vg.getChildAt(1).animate().translationY(100f)
-            .setDuration(250).start()
-
-        // Root Background: Mờ dần và đóng
-        root.animate().alpha(0f).setDuration(250).withEndAction {
-            root.visibility = View.GONE
-            root.post {
-                if (root.isAttachedToWindow) try { wm.removeView(root) } catch(_: Exception){}
-                popupView = null
-            }
+    private fun close(v: View) {
+        if (pop == null) return
+        val lp = v.layoutParams as WindowManager.LayoutParams
+        blur(v, lp, lp.blurBehindRadius, 0)
+        // Khi đóng dùng ip (Decelerate) để thu về mượt mà, không cần nảy
+        (v as ViewGroup).getChildAt(0).animate().translationY(-50f).alpha(0f).setInterpolator(ip).setDuration(250).start()
+        v.getChildAt(1).animate().translationY(50f).setInterpolator(ip).setDuration(250).start()
+        v.animate().alpha(0f).setInterpolator(ip).setDuration(250).withEndAction {
+            v.visibility = View.GONE
+            v.post { if (v.isAttachedToWindow) runCatching { w.removeView(v) }; pop = null }
         }.start()
     }
 
-    private fun animateBlur(v: View, p: WindowManager.LayoutParams, f: Int, t: Int, d: Long) {
-        ValueAnimator.ofInt(f, t).apply { duration = d; addUpdateListener {
-            if (v.isAttachedToWindow && v.isVisible) try { p.blurBehindRadius = it.animatedValue as Int; wm.updateViewLayout(v, p) } catch (_: Exception){}
-        }}.start()
+    private fun blur(v: View, lp: WindowManager.LayoutParams, f: Int, t: Int) {
+        ValueAnimator.ofInt(f, t).apply {
+            duration = 800; interpolator = ip
+            addUpdateListener { if (v.isAttachedToWindow) runCatching { lp.blurBehindRadius = it.animatedValue as Int; w.updateViewLayout(v, lp) } }
+        }.start()
     }
 
     private fun exec(pkg: String, cls: String, hist: Boolean = false, action: String? = null) {
-        runCatching {
-            ctx.startActivity(Intent().setClassName(pkg, cls).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).apply {
-                if (hist) addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
-                if (action != null) setAction(action)
-            })
-        }
+        runCatching { c.startActivity(Intent().setClassName(pkg, cls).addFlags(268435456).apply { if (hist) addFlags(1048576); if (action != null) setAction(action) }) }
     }
 
-    private fun toggleDim() {
-        if (ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == PackageManager.PERMISSION_GRANTED) {
-            val prefs = ctx.getSharedPreferences("tile_prefs", Context.MODE_PRIVATE)
-            val isDim = prefs.getBoolean("dim", false)
-            Settings.Secure.putInt(ctx.contentResolver, "reduce_bright_colors_activated", if (!isDim) 1 else 0)
-            prefs.edit { putBoolean("dim", !isDim) }
-        }
-        // ĐÃ XÓA TOAST TẠI ĐÂY
-    }
-
-    fun destroy() {
-        barView?.let { if (it.isAttachedToWindow) wm.removeView(it) }
-        popupView?.let { if (it.isAttachedToWindow) wm.removeView(it) }
-    }
+    fun destroy() { bar?.let { if (it.isAttachedToWindow) w.removeView(it) }; pop?.let { if (it.isAttachedToWindow) w.removeView(it) } }
 }
